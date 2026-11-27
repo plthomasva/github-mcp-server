@@ -8,7 +8,7 @@
   "inputSchema": {
     "properties": {
       "fields": {
-        "description": "Top-level issue fields to return with method get. Omit or leave empty for the full response. For metadata-only reads, select fields such as 'number', 'title', 'state', and 'html_url' to leave out the issue body.",
+        "description": "Top-level issue fields to return with method get_fields. Choose one or more fields; use method get for the full response.",
         "items": {
           "enum": [
             "assignees",
@@ -47,9 +47,10 @@
         "type": "number"
       },
       "method": {
-        "description": "The read operation to perform on a single issue.\nOptions are:\n1. get - Get issue details. Also returns best-effort hierarchy flags (`has_parent`, `has_children`); `parent` and `sub_issues_summary` are optional relationship summaries, and `closed_by_pull_requests` summarizes the pull requests configured to close the issue as `total_count` plus up to 5 `references`.\n2. get_comments - Get issue comments.\n3. get_sub_issues - Get sub-issues (children) of the issue.\n4. get_parent - Get the parent issue, if this issue is a sub-issue of another.\n5. get_labels - Get labels assigned to the issue.\n",
+        "description": "The read operation to perform on a single issue.\nOptions are:\n1. get - Get issue details. Also returns best-effort hierarchy flags (`has_parent`, `has_children`); `parent` and `sub_issues_summary` are optional relationship summaries, and `closed_by_pull_requests` summarizes the pull requests configured to close the issue as `total_count` plus up to 5 `references`.\n2. get_fields - Get selected issue details. Provide one or more field names in `fields`.\n3. get_comments - Get issue comments.\n4. get_sub_issues - Get sub-issues (children) of the issue.\n5. get_parent - Get the parent issue, if this issue is a sub-issue of another.\n6. get_labels - Get labels assigned to the issue.\n",
         "enum": [
           "get",
+          "get_fields",
           "get_comments",
           "get_sub_issues",
           "get_parent",
@@ -96,6 +97,316 @@
               "description": "Any value."
             }
           },
+          "issue": {
+            "additionalProperties": false,
+            "properties": {
+              "assignees": {
+                "items": {
+                  "type": "string"
+                },
+                "type": [
+                  "null",
+                  "array"
+                ]
+              },
+              "author_association": {
+                "type": "string"
+              },
+              "body": {
+                "type": "string"
+              },
+              "closed_at": {
+                "description": "Closure time (RFC 3339), when closed.",
+                "type": "string"
+              },
+              "closed_by": {
+                "type": "string"
+              },
+              "closed_by_pull_requests": {
+                "additionalProperties": false,
+                "properties": {
+                  "references": {
+                    "items": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "number": {
+                          "type": "integer"
+                        },
+                        "repository": {
+                          "type": "string"
+                        },
+                        "state": {
+                          "type": "string"
+                        },
+                        "title": {
+                          "type": "string"
+                        },
+                        "url": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "number",
+                        "title",
+                        "state",
+                        "url"
+                      ],
+                      "type": "object"
+                    },
+                    "type": [
+                      "null",
+                      "array"
+                    ]
+                  },
+                  "total_count": {
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "total_count",
+                  "references"
+                ],
+                "type": [
+                  "null",
+                  "object"
+                ]
+              },
+              "comments": {
+                "description": "Number of comments.",
+                "type": "integer"
+              },
+              "created_at": {
+                "description": "Creation time (RFC 3339).",
+                "type": "string"
+              },
+              "draft": {
+                "type": "boolean"
+              },
+              "field_values": {
+                "items": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "field": {
+                      "type": "string"
+                    },
+                    "value": {
+                      "type": "string"
+                    },
+                    "values": {
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": [
+                        "null",
+                        "array"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "field"
+                  ],
+                  "type": "object"
+                },
+                "type": [
+                  "null",
+                  "array"
+                ]
+              },
+              "has_children": {
+                "type": [
+                  "null",
+                  "boolean"
+                ]
+              },
+              "has_parent": {
+                "type": [
+                  "null",
+                  "boolean"
+                ]
+              },
+              "html_url": {
+                "description": "Human-readable issue link.",
+                "type": "string"
+              },
+              "issue_type": {
+                "type": "string"
+              },
+              "labels": {
+                "items": {
+                  "type": "string"
+                },
+                "type": [
+                  "null",
+                  "array"
+                ]
+              },
+              "locked": {
+                "type": "boolean"
+              },
+              "milestone": {
+                "type": "string"
+              },
+              "number": {
+                "type": "integer"
+              },
+              "parent": {
+                "additionalProperties": false,
+                "properties": {
+                  "number": {
+                    "type": "integer"
+                  },
+                  "repository": {
+                    "type": "string"
+                  },
+                  "state": {
+                    "type": "string"
+                  },
+                  "title": {
+                    "type": "string"
+                  },
+                  "url": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "number",
+                  "title",
+                  "state",
+                  "url"
+                ],
+                "type": [
+                  "null",
+                  "object"
+                ]
+              },
+              "reactions": {
+                "additionalProperties": false,
+                "properties": {
+                  "+1": {
+                    "type": "integer"
+                  },
+                  "-1": {
+                    "type": "integer"
+                  },
+                  "confused": {
+                    "type": "integer"
+                  },
+                  "eyes": {
+                    "type": "integer"
+                  },
+                  "heart": {
+                    "type": "integer"
+                  },
+                  "hooray": {
+                    "type": "integer"
+                  },
+                  "laugh": {
+                    "type": "integer"
+                  },
+                  "rocket": {
+                    "type": "integer"
+                  },
+                  "total_count": {
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "total_count",
+                  "+1",
+                  "-1",
+                  "laugh",
+                  "confused",
+                  "heart",
+                  "hooray",
+                  "rocket",
+                  "eyes"
+                ],
+                "type": [
+                  "null",
+                  "object"
+                ]
+              },
+              "state": {
+                "description": "Issue state (lowercase REST value).",
+                "enum": [
+                  "",
+                  "open",
+                  "closed"
+                ],
+                "type": "string"
+              },
+              "state_reason": {
+                "enum": [
+                  "completed",
+                  "not_planned",
+                  "reopened",
+                  "duplicate"
+                ],
+                "type": "string"
+              },
+              "sub_issues_summary": {
+                "additionalProperties": false,
+                "properties": {
+                  "completed": {
+                    "description": "Number of completed sub-issues.",
+                    "type": "integer"
+                  },
+                  "percent_completed": {
+                    "description": "Completed sub-issues as a percentage (0-100).",
+                    "type": "integer"
+                  },
+                  "total": {
+                    "description": "Total number of sub-issues.",
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "total",
+                  "completed",
+                  "percent_completed"
+                ],
+                "type": [
+                  "null",
+                  "object"
+                ]
+              },
+              "title": {
+                "type": "string"
+              },
+              "updated_at": {
+                "description": "Last update time (RFC 3339).",
+                "type": "string"
+              },
+              "user": {
+                "additionalProperties": false,
+                "properties": {
+                  "id": {
+                    "type": "integer"
+                  },
+                  "login": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "login"
+                ],
+                "type": [
+                  "null",
+                  "object"
+                ]
+              }
+            },
+            "required": [
+              "number",
+              "title",
+              "state",
+              "assignees"
+            ],
+            "type": [
+              "null",
+              "object"
+            ]
+          },
           "labels": {
             "not": {
               "description": "Any value."
@@ -104,6 +415,43 @@
           "method": {
             "enum": [
               "get"
+            ]
+          },
+          "parent": {
+            "not": {
+              "description": "Any value."
+            }
+          },
+          "sub_issues": {
+            "not": {
+              "description": "Any value."
+            }
+          },
+          "totalCount": {
+            "not": {
+              "description": "Any value."
+            }
+          }
+        },
+        "required": [
+          "issue"
+        ]
+      },
+      {
+        "properties": {
+          "comments": {
+            "not": {
+              "description": "Any value."
+            }
+          },
+          "labels": {
+            "not": {
+              "description": "Any value."
+            }
+          },
+          "method": {
+            "enum": [
+              "get_fields"
             ]
           },
           "parent": {
@@ -711,6 +1059,7 @@
       "method": {
         "enum": [
           "get",
+          "get_fields",
           "get_comments",
           "get_sub_issues",
           "get_parent",

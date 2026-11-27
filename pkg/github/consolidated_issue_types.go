@@ -394,25 +394,26 @@ func subIssueOutput(issue *github.SubIssue) (*SubIssueOutput, error) {
 
 var issueReadOutputSchema = sync.OnceValue(func() *jsonschema.Schema {
 	schema := issueDTOschema[IssueReadOutput]()
-	issue := schema.Properties["issue"]
-	// A get response may contain only the issue fields requested by the caller.
-	issue.Required = nil
-	issue.Properties["state"].Enum = []any{"", "open", "closed"}
-	issue.Properties["state_reason"].Enum = []any{"completed", "not_planned", "reopened", "duplicate"}
-	describeIssueSummarySchema(issue.Properties["sub_issues_summary"])
+	schema.Properties["issue"] = issueDetailsOutputSchema(false)
 	schema.Properties["sub_issues"] = subIssueArraySchema()
 	schema.Properties["parent"].Properties["state"].Enum = []any{"", "OPEN", "CLOSED"}
-	schema.Properties["method"].Enum = []any{"get", "get_comments", "get_sub_issues", "get_parent", "get_labels"}
-	methods := []string{"get", "get_comments", "get_sub_issues", "get_parent", "get_labels"}
-	fields := []string{"issue", "comments", "sub_issues", "parent", "labels"}
+	schema.Properties["method"].Enum = []any{"get", "get_fields", "get_comments", "get_sub_issues", "get_parent", "get_labels"}
+	methods := []string{"get", "get_fields", "get_comments", "get_sub_issues", "get_parent", "get_labels"}
+	fields := []string{"issue", "issue", "comments", "sub_issues", "parent", "labels"}
 	for i, method := range methods {
 		variant := &jsonschema.Schema{Required: []string{fields[i]}, Properties: map[string]*jsonschema.Schema{
 			"method": {Enum: []any{method}},
 		}}
+		if method == "get" {
+			variant.Properties["issue"] = issueDetailsOutputSchema(true)
+		}
 		for j, field := range fields {
-			if i != j {
+			if i != j && field != "issue" {
 				variant.Properties[field] = forbiddenIssueVariantProperty()
 			}
+		}
+		if method != "get" && method != "get_fields" {
+			variant.Properties["issue"] = forbiddenIssueVariantProperty()
 		}
 		if method == "get_labels" {
 			variant.Required = append(variant.Required, "totalCount")
@@ -423,6 +424,17 @@ var issueReadOutputSchema = sync.OnceValue(func() *jsonschema.Schema {
 	}
 	return schema
 })
+
+func issueDetailsOutputSchema(requireFields bool) *jsonschema.Schema {
+	issue := issueDTOschema[IssueReadOutput]().Properties["issue"]
+	issue.Properties["state"].Enum = []any{"", "open", "closed"}
+	issue.Properties["state_reason"].Enum = []any{"completed", "not_planned", "reopened", "duplicate"}
+	describeIssueSummarySchema(issue.Properties["sub_issues_summary"])
+	if !requireFields {
+		issue.Required = nil
+	}
+	return issue
+}
 
 type SubIssueWriteOutput struct {
 	Method string          `json:"method"`

@@ -805,11 +805,12 @@ func IssueRead(t translations.TranslationHelperFunc) inventory.ServerTool {
 				Description: "The read operation to perform on a single issue.\n" +
 					"Options are:\n" +
 					"1. get - Get issue details. Also returns best-effort hierarchy flags (`has_parent`, `has_children`); `parent` and `sub_issues_summary` are optional relationship summaries, and `closed_by_pull_requests` summarizes the pull requests configured to close the issue as `total_count` plus up to 5 `references`.\n" +
-					"2. get_comments - Get issue comments.\n" +
-					"3. get_sub_issues - Get sub-issues (children) of the issue.\n" +
-					"4. get_parent - Get the parent issue, if this issue is a sub-issue of another.\n" +
-					"5. get_labels - Get labels assigned to the issue.\n",
-				Enum: []any{"get", "get_comments", "get_sub_issues", "get_parent", "get_labels"},
+					"2. get_fields - Get selected issue details. Provide one or more field names in `fields`.\n" +
+					"3. get_comments - Get issue comments.\n" +
+					"4. get_sub_issues - Get sub-issues (children) of the issue.\n" +
+					"5. get_parent - Get the parent issue, if this issue is a sub-issue of another.\n" +
+					"6. get_labels - Get labels assigned to the issue.\n",
+				Enum: []any{"get", "get_fields", "get_comments", "get_sub_issues", "get_parent", "get_labels"},
 			},
 			"owner": {
 				Type:        "string",
@@ -824,7 +825,7 @@ func IssueRead(t translations.TranslationHelperFunc) inventory.ServerTool {
 				Description: "The number of the issue",
 			},
 			"fields": fieldsSchemaProperty(
-				"Top-level issue fields to return with method get. Omit or leave empty for the full response. For metadata-only reads, select fields such as 'number', 'title', 'state', and 'html_url' to leave out the issue body.",
+				"Top-level issue fields to return with method get_fields. Choose one or more fields; use method get for the full response.",
 				selectableFields,
 			),
 		},
@@ -854,8 +855,11 @@ func IssueRead(t translations.TranslationHelperFunc) inventory.ServerTool {
 			if err != nil {
 				return utils.NewToolResultError(err.Error()), nil, nil
 			}
-			if len(input.Fields) > 0 && method != "get" {
-				return utils.NewToolResultError("fields is only supported with method get"), nil, nil
+			if len(input.Fields) > 0 && method != "get_fields" {
+				return utils.NewToolResultError("fields is only supported with method get_fields"), nil, nil
+			}
+			if method == "get_fields" && len(input.Fields) == 0 {
+				return utils.NewToolResultError("method get_fields requires at least one field"), nil, nil
 			}
 
 			owner, err := RequiredParam[string](args, "owner")
@@ -894,6 +898,12 @@ func IssueRead(t translations.TranslationHelperFunc) inventory.ServerTool {
 			switch method {
 			case "get":
 				result, output, err := getIssue(ctx, client, deps, owner, repo, issueNumber, input.Fields)
+				return attachIFC(result), output, err
+			case "get_fields":
+				result, output, err := getIssue(ctx, client, deps, owner, repo, issueNumber, input.Fields)
+				if output != nil {
+					output.Method = "get_fields"
+				}
 				return attachIFC(result), output, err
 			case "get_comments":
 				result, output, err := getIssueComments(ctx, client, deps, owner, repo, issueNumber, pagination)

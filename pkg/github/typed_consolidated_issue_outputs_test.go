@@ -366,21 +366,22 @@ func TestIssueReadFields(t *testing.T) {
 			session, schemas := consolidatedIssueSession(t, deps, protocol, false)
 			for _, tc := range []struct {
 				name           string
+				method         string
 				fields         []string
 				want           string
 				wantStructured string
 			}{
-				{"metadata only", []string{"number", "title", "state", "html_url"}, `{"html_url":"https://github.com/owner/repo/issues/1","number":1,"state":"open","title":"Subject"}`, ""},
-				{"single field", []string{"title"}, `{"title":"Subject"}`, ""},
-				{"body requested", []string{"body"}, `{"body":"Detailed issue body"}`, ""},
-				{"author requested", []string{"user"}, `{"user":{"id":7,"login":"octo","profile_url":"https://github.com/octo"}}`, "{" + compactAuthor + "}"},
-				{"empty assignees", []string{"assignees"}, `{"assignees":[]}`, ""},
-				{"absent optional field", []string{"milestone"}, `{}`, ""},
-				{"omitted selection", nil, full, compact},
-				{"empty selection", []string{}, full, compact},
+				{"metadata only", "get_fields", []string{"number", "title", "state", "html_url"}, `{"html_url":"https://github.com/owner/repo/issues/1","number":1,"state":"open","title":"Subject"}`, ""},
+				{"single field", "get_fields", []string{"title"}, `{"title":"Subject"}`, ""},
+				{"body requested", "get_fields", []string{"body"}, `{"body":"Detailed issue body"}`, ""},
+				{"author requested", "get_fields", []string{"user"}, `{"user":{"id":7,"login":"octo","profile_url":"https://github.com/octo"}}`, "{" + compactAuthor + "}"},
+				{"empty assignees", "get_fields", []string{"assignees"}, `{"assignees":[]}`, ""},
+				{"absent optional field", "get_fields", []string{"milestone"}, `{}`, ""},
+				{"omitted selection", "get", nil, full, compact},
+				{"empty selection", "get", []string{}, full, compact},
 			} {
 				t.Run(tc.name, func(t *testing.T) {
-					args := map[string]any{"method": "get", "owner": "owner", "repo": "repo", "issue_number": 1}
+					args := map[string]any{"method": tc.method, "owner": "owner", "repo": "repo", "issue_number": 1}
 					if tc.fields != nil {
 						args["fields"] = tc.fields
 					}
@@ -390,7 +391,7 @@ func TestIssueReadFields(t *testing.T) {
 						if want == "" {
 							want = tc.want
 						}
-						assert.JSONEq(t, `{"method":"get","issue":`+want+`}`, mustMarshalJSON(t, result.StructuredContent))
+						assert.JSONEq(t, `{"method":"`+tc.method+`","issue":`+want+`}`, mustMarshalJSON(t, result.StructuredContent))
 					}
 				})
 			}
@@ -399,8 +400,9 @@ func TestIssueReadFields(t *testing.T) {
 				field  string
 				want   string
 			}{
-				{"get", "not_a_field", "html_url"},
-				{"get_comments", "body", "fields is only supported with method get"},
+				{"get_fields", "not_a_field", "html_url"},
+				{"get", "body", "fields is only supported with method get_fields"},
+				{"get_comments", "body", "fields is only supported with method get_fields"},
 			} {
 				args := map[string]any{"method": tc.method, "owner": "owner", "repo": "repo", "issue_number": 1, "fields": []string{tc.field}}
 				result, err := session.CallTool(context.Background(), &mcp.CallToolParams{Name: "issue_read", Arguments: args})
@@ -409,6 +411,13 @@ func TestIssueReadFields(t *testing.T) {
 				assert.Contains(t, getErrorResult(t, result).Text, tc.want)
 				assert.Nil(t, result.StructuredContent)
 			}
+			result, err := session.CallTool(context.Background(), &mcp.CallToolParams{
+				Name:      "issue_read",
+				Arguments: map[string]any{"method": "get_fields", "owner": "owner", "repo": "repo", "issue_number": 1},
+			})
+			require.NoError(t, err)
+			require.True(t, result.IsError)
+			assert.Contains(t, getErrorResult(t, result).Text, "method get_fields requires at least one field")
 		})
 	}
 }
@@ -512,8 +521,8 @@ func TestConsolidatedIssueStrictSchemasAndScalars(t *testing.T) {
 	}{
 		{
 			issueReadOutputSchema(),
-			[]string{`{"method":"get","issue":null}`, `{"method":"get_comments","comments":[]}`, `{"method":"get_sub_issues","sub_issues":[null]}`, `{"method":"get_parent","parent":null}`, `{"method":"get","issue":{"number":0,"title":"","state":"","assignees":[]}}`, `{"method":"get","issue":{"number":1}}`, `{"method":"get_labels","labels":[],"totalCount":0}`},
-			[]string{`null`, `[]`, `{}`, `{"method":"get"}`, `{"method":"get","comments":[]}`, `{"method":"get","issue":{"number":"1"}}`, `{"method":"get_parent","parent":{"number":1}}`, `{"method":"get_labels","labels":[]}`, `{"method":"get","issue":null,"comments":[]}`},
+			[]string{`{"method":"get","issue":null}`, `{"method":"get_comments","comments":[]}`, `{"method":"get_sub_issues","sub_issues":[null]}`, `{"method":"get_parent","parent":null}`, `{"method":"get","issue":{"number":0,"title":"","state":"","assignees":[]}}`, `{"method":"get_fields","issue":{"number":1}}`, `{"method":"get_labels","labels":[],"totalCount":0}`},
+			[]string{`null`, `[]`, `{}`, `{"method":"get"}`, `{"method":"get","comments":[]}`, `{"method":"get","issue":{"number":1}}`, `{"method":"get","issue":{"number":"1"}}`, `{"method":"get_parent","parent":{"number":1}}`, `{"method":"get_labels","labels":[]}`, `{"method":"get","issue":null,"comments":[]}`},
 		},
 		{
 			issueWriteOutputSchema(),

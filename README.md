@@ -1063,15 +1063,16 @@ For negotiated supported protocol versions `2026-07-28` or newer, the consolidat
 
 - **issue_read** - Get issue details
   - **OAuth Challenge Scopes**: `repo`
-  - `fields`: Top-level issue fields to return with method get. Omit or leave empty for the full response. For metadata-only reads, select fields such as 'number', 'title', 'state', and 'html_url' to leave out the issue body. (string[], optional)
+  - `fields`: Top-level issue fields to return with method get_fields. Choose one or more fields; use method get for the full response. (string[], optional)
   - `issue_number`: The number of the issue (number, required)
   - `method`: The read operation to perform on a single issue.
     Options are:
     1. get - Get issue details. Also returns best-effort hierarchy flags (`has_parent`, `has_children`); `parent` and `sub_issues_summary` are optional relationship summaries, and `closed_by_pull_requests` summarizes the pull requests configured to close the issue as `total_count` plus up to 5 `references`.
-    2. get_comments - Get issue comments.
-    3. get_sub_issues - Get sub-issues (children) of the issue.
-    4. get_parent - Get the parent issue, if this issue is a sub-issue of another.
-    5. get_labels - Get labels assigned to the issue.
+    2. get_fields - Get selected issue details. Provide one or more field names in `fields`.
+    3. get_comments - Get issue comments.
+    4. get_sub_issues - Get sub-issues (children) of the issue.
+    5. get_parent - Get the parent issue, if this issue is a sub-issue of another.
+    6. get_labels - Get labels assigned to the issue.
      (string, required)
   - `owner`: The owner of the repository (string, required)
   - `page`: Page number for pagination (min 1) (number, optional)
